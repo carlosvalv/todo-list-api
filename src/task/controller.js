@@ -10,7 +10,7 @@ const getTasks = (req, res) => {
     });
 }
 
-const getTaskById = (req, res) => {
+const getTaskById = (req, res) => { 
     const id = req.params.id;
     pool.query(queries.getTaskById, [id], (error, results) => {
         if (error) throw error;
@@ -34,22 +34,37 @@ const addTask = (req, res) => {
         queries.addTask,
         [id, title, description, done, creationDate, projectId, userId],
         (error, results) => {
-            if (error) res.status(500).json("Error adding task");
+            if (error) return res.status(500).json("Error adding task");
             res.status(200).send("Task created succesfully")
         });
 }
 
 const updateTask = (req, res) => {
     const id = req.params.id;
-    const { title } = req.body;
+    const { title, description, done } = req.body;
+    console.log(title, description, done);
+    
+    if (title === undefined && description === undefined && done === undefined)
+        return res.status(500).send('Parameters empty')
 
     pool.query(queries.getTaskById, [id], (error, results) => {
         let noTasksFound = !results || !results.rows.length;
         if (noTasksFound)
-            res.status(404).send(`The task with id ${id} does not exist`);
+            return res.status(404).send(`The task with id ${id} does not exist`);
+            
+        let query = queries.updateTask;
+        let statements = [];
+        if (title)
+            statements.push(`title = '${title}' `);
+        if (description)
+            statements.push(`description = '${description}' `);
+        if (done)
+            statements.push(`done = '${done}' `);
 
-        pool.query(queries.updateTask, [title, id], (error, results) =>{
-            if (error) res.status(500).json("Error updating task with Id " + id);
+        query = query.replace("{{sets}}", statements.join(","));
+
+        pool.query(query, [id], (error, results) => {
+            if (error) return res.status(500).json(error);
             res.status(200).send("Task updated succesfully")
         });
     });
@@ -58,18 +73,17 @@ const updateTask = (req, res) => {
 const deleteTask = (req, res) => {
     const id = req.params.id;
     let deletedDate = new Date();
-    pool.query(
-        queries.deleteTask,
-        [deletedDate, id],
-        (error, results) => {
-            if (error) res.status(500).json("Error deleting task with Id " + id);
 
-            let noTasksFound = !results.rows.length;
-            if (noTasksFound)
-                res.status(404).send(`The task with id ${id} does not exist`);
+    pool.query(queries.getTaskById, [id], (error, results) => {
+        let notFound = !results || !results.rows.length;
+        if (notFound)
+            return res.status(404).send(`The task with id ${id} does not exist`);
 
+        pool.query(queries.deleteTask, [deletedDate, id], (error, results) => {
+            if (error) return res.status(500).json("Error deleting task with Id " + id);
             res.status(200).send("Task deleted succesfully")
         });
+    });
 }
 
 module.exports = {
