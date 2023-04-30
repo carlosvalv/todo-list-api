@@ -51,6 +51,7 @@ const updateTask = (req, res) => {
         let noTasksFound = !results || !results.rows.length;
         if (noTasksFound)
             return res.status(404).send(`The task with id ${id} does not exist`);
+            
         let query = queries.updateTask;
         let statements = [];
         if (title)
