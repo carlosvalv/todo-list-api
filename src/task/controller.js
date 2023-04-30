@@ -10,7 +10,7 @@ const getTasks = (req, res) => {
     });
 }
 
-const getTaskById = (req, res) => {
+const getTaskById = (req, res) => { 
     const id = req.params.id;
     pool.query(queries.getTaskById, [id], (error, results) => {
         if (error) throw error;
@@ -73,18 +73,17 @@ const updateTask = (req, res) => {
 const deleteTask = (req, res) => {
     const id = req.params.id;
     let deletedDate = new Date();
-    pool.query(
-        queries.deleteTask,
-        [deletedDate, id],
-        (error, results) => {
-            if (error) res.status(500).json("Error deleting task with Id " + id);
 
-            let noTasksFound = !results.rows.length;
-            if (noTasksFound)
-                res.status(404).send(`The task with id ${id} does not exist`);
+    pool.query(queries.getTaskById, [id], (error, results) => {
+        let notFound = !results || !results.rows.length;
+        if (notFound)
+            return res.status(404).send(`The task with id ${id} does not exist`);
 
+        pool.query(queries.deleteTask, [deletedDate, id], (error, results) => {
+            if (error) return res.status(500).json("Error deleting task with Id " + id);
             res.status(200).send("Task deleted succesfully")
         });
+    });
 }
 
 module.exports = {
