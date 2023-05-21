@@ -5,7 +5,7 @@ const userId = "f6a16ff7-4a31-11eb-be7b-8344edc8f36b";
 
 const getTasks = (req, res) => {
     pool.query(queries.getTasks, (error, results) => {
-        if (error) throw error;
+        if (error) return res.status(500).json("Error get tasks");
         res.status(200).json(results.rows);
     });
 }
@@ -42,7 +42,6 @@ const addTask = (req, res) => {
 const updateTask = (req, res) => {
     const id = req.params.id;
     const { title, description, done } = req.body;
-    console.log(title, description, done);
     
     if (title === undefined && description === undefined && done === undefined)
         return res.status(500).send('Parameters empty')
@@ -58,11 +57,10 @@ const updateTask = (req, res) => {
             statements.push(`title = '${title}' `);
         if (description)
             statements.push(`description = '${description}' `);
-        if (done)
+        if (done.toString())
             statements.push(`done = '${done}' `);
 
         query = query.replace("{{sets}}", statements.join(","));
-
         pool.query(query, [id], (error, results) => {
             if (error) return res.status(500).json(error);
             res.status(200).send("Task updated succesfully")
