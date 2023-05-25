@@ -10,10 +10,14 @@ const getProjects = (req, res) => {
     });
 }
 
-const getProjectById = (req, res) => {
+const getProjectById = async(req, res) => {
     const id = req.params.id;
+    if(!id)
+        return res.status(422).json(`Missing param id`);
+        
     pool.query(queries.getProjectById, [id], (error, results) => {
-        if (error) return res.status(404).json(`Project with id ${id} not found`);
+        if (error) return res.status(500).json(`Project with id ${id} not found`);
+        if (results.rows.length === 0)  return res.status(404).json(`Project with id ${id} not found`);
         res.status(200).json(results.rows);
     });
 }
