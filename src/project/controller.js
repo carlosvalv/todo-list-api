@@ -25,6 +25,9 @@ const getProjectById = async(req, res) => {
 const addProject = (req, res) => {
     let creationDate = new Date();
     const { id, name } = req.body;
+    
+    if(!id || !name)
+        return res.status(422).json(`Missing params`);
 
     pool.query(
         queries.addProject,
@@ -39,8 +42,8 @@ const updateProject = (req, res) => {
     const id = req.params.id;
     const { name } = req.body;
     
-    if (name === undefined)
-        return res.status(500).send('Parameters empty')
+    if (!name)
+        return res.status(422).json(`Missing params`);
 
     pool.query(queries.getProjectById, [id], (error, results) => {
         let notFound = !results || !results.rows.length;

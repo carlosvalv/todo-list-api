@@ -1,9 +1,10 @@
 const request =  require('supertest');
 const Pool = require('pg').Pool;
 const client = require('../../db.js')
+const { v4: uuidv4 } = require('uuid');
 
-const projectId = "f6a16ff7-4a31-11eb-be7b-8344edc8f36b";
-const userId = "731577e4-7547-48cb-9a74-48574d52bd00";
+const projectId = uuidv4();
+const userId = uuidv4();
 const project ={
     "id": projectId,
     "name": "test project",
@@ -36,9 +37,9 @@ describe('project', ()=>{
     })
     
     beforeEach( async function () {
-        await client.query('CREATE TEMPORARY TABLE "user" (LIKE "user" INCLUDING ALL)').then({})
-        await client.query('CREATE TEMPORARY TABLE project (LIKE project INCLUDING ALL)').then({})
-        await client.query('CREATE TEMPORARY TABLE task (LIKE task INCLUDING ALL)').then({})
+        await client.query('CREATE TEMPORARY TABLE "user" (LIKE "user" INCLUDING ALL)').then({});
+        await client.query('CREATE TEMPORARY TABLE project (LIKE project INCLUDING ALL)').then({});
+        await client.query('CREATE TEMPORARY TABLE task (LIKE task INCLUDING ALL)').then({});
         
     })
 
@@ -55,12 +56,44 @@ describe('project', ()=>{
 
     describe('get project route', ()=>{
         test("should return a 404", async ()=> {
-            let projectIdTest="784f3300-1b4c-411d-946f-abfb6a5ab82f";
+            let projectIdTest= uuidv4();
             await request(app).get(`/api/v1/projects/${projectIdTest}`).expect(404);
         });
         test("exists, should return a 200", async ()=> {
             await request(app).get(`/api/v1/projects/${projectId}`).expect(200);
-        })
+        });
+    })
+
+    describe('add project route', ()=>{
+        test("should return a 200", async ()=> {
+            const payload = {id: uuidv4(), name: 'test'};
+            await request(app).post(`/api/v1/projects`,).send(payload).expect(200);
+        });
+        test("missing params, should return a 422", async ()=> {
+            const payload = {id: uuidv4()};
+            await request(app).post(`/api/v1/projects`,).send(payload).expect(422);
+        });
+    })
+
+    describe('update project route', ()=>{
+        test("should return a 200", async ()=> {
+            const payload = {name: 'test2'};
+            await request(app).put(`/api/v1/projects/${projectId}`).send(payload).expect(200);
+            const res = await request(app).get(`/api/v1/projects/${projectId}`).expect(200);
+            expect(res.body[0].name).toEqual(payload.name);
+        });
+    
+        test("missing params, should return a 422", async ()=> {
+            const payload = {};
+            await request(app).put(`/api/v1/projects/${projectId}`).send(payload).expect(422);
+        });
+    })
+
+    describe('delete project route', ()=>{
+        test("should return a 200", async ()=> {
+            await request(app).delete(`/api/v1/projects/${projectId}`).expect(200);
+            await request(app).get(`/api/v1/projects/${projectId}`).expect(404);
+        });
     })
 
     afterAll(()=>{
