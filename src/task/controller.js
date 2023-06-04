@@ -29,10 +29,10 @@ const getTaskByProjectId = (req, res) => {
 const addTask = (req, res) => {
     let creationDate = new Date();
     let done = false;
-    const { id, title, description, projectId } = req.body;
+    const { id, title, description, projectId, order } = req.body;
     pool.query(
         queries.addTask,
-        [id, title, description, done, creationDate, projectId, userId],
+        [id, title, description, done, creationDate, projectId, userId, order, creationDate],
         (error, results) => {
             if (error) return res.status(500).json("Error adding task");
             res.status(200).send("Task created succesfully")
@@ -41,10 +41,10 @@ const addTask = (req, res) => {
 
 const updateTask = (req, res) => {
     const id = req.params.id;
-    const { title, description, done } = req.body;
-    
+    const { title, description, done, order } = req.body;
+    console.log("caca")
     if (title === undefined && description === undefined && done === undefined)
-        return res.status(500).send('Parameters empty')
+        return res.status(422).json(`Missing params`);
 
     pool.query(queries.getTaskById, [id], (error, results) => {
         let noTasksFound = !results || !results.rows.length;
@@ -59,6 +59,8 @@ const updateTask = (req, res) => {
             statements.push(`description = '${description}' `);
         if (done.toString())
             statements.push(`done = '${done}' `);
+        if (order && order >= 0)
+            statements.push(`order = '${new Date()}' `);
 
         query = query.replace("{{sets}}", statements.join(","));
         pool.query(query, [id], (error, results) => {
@@ -67,6 +69,26 @@ const updateTask = (req, res) => {
         });
     });
 }
+
+const orderTasks = (req, res) => {
+    const { ids } = req.body;
+    
+    if (ids === undefined || !ids.length)
+        return res.status(422).json(`Missing params`);
+
+        let query = "update task set \"order\" = nv.o " +
+        "from( values "+
+        ids.map((element, index) => {
+            return "(uuid('"+element+"'), "+index+") "
+        });
+        query +=") as nv (id, o) "+
+        "where task.id = nv.id";
+    pool.query(query, (error, results) => {
+        if (error) return res.status(500).json(error);
+        res.status(200).send("Task updated succesfully")     
+    });
+}
+
 
 const deleteTask = (req, res) => {
     const id = req.params.id;
@@ -90,5 +112,6 @@ module.exports = {
     getTaskByProjectId,
     addTask,
     updateTask,
+    orderTasks,
     deleteTask,
 };

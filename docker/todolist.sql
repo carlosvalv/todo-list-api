@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS public.task
     deleted_date timestamp without time zone,
     project_id uuid NOT NULL,
     user_id uuid NOT NULL,
+    "order" integer DEFAULT 0,
     CONSTRAINT task_pkey PRIMARY KEY (id),
     CONSTRAINT task_fk_project FOREIGN KEY (project_id)
         REFERENCES public.project (id) MATCH SIMPLE
