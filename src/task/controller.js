@@ -42,7 +42,7 @@ const addTask = (req, res) => {
 const updateTask = (req, res) => {
     const id = req.params.id;
     const { title, description, done, order } = req.body;
-    console.log("caca")
+
     if (title === undefined && description === undefined && done === undefined)
         return res.status(422).json(`Missing params`);
 
