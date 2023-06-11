@@ -41,7 +41,7 @@ const addTask = (req, res) => {
 
 const updateTask = (req, res) => {
     const id = req.params.id;
-    const { title, description, done, order } = req.body;
+    const { title, description, done } = req.body;
 
     if (title === undefined && description === undefined && done === undefined)
         return res.status(422).json(`Missing params`);
@@ -57,10 +57,8 @@ const updateTask = (req, res) => {
             statements.push(`title = '${title}' `);
         if (description)
             statements.push(`description = '${description}' `);
-        if (done.toString())
+        if (done !== undefined && done !== null && done.toString())
             statements.push(`done = '${done}' `);
-        if (order && order >= 0)
-            statements.push(`order = '${new Date()}' `);
 
         query = query.replace("{{sets}}", statements.join(","));
         pool.query(query, [id], (error, results) => {
